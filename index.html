@@ -3,9 +3,9 @@
 <head>
     <title>Vanilla JS Example</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="light dark">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.fluid.classless.min.css">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta content="light dark" name="color-scheme">
+    <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.fluid.classless.min.css" rel="stylesheet">
 </head>
 
 <body>
@@ -13,7 +13,7 @@
     <div>
         <h1>Vanilla JS Example</h1>
         <hr>
-        <button id="fetch-users">Fetch Users</button>
+        <button id="fetch-users" onclick="fillTable()">Fetch Users</button>
     </div>
     <table id="tbl-users">
         <thead>
@@ -24,14 +24,83 @@
             <th>Tel</th>
         </tr>
         </thead>
-        <tbody></tbody>
+        <tbody id="tbl-body"></tbody>
     </table>
 </main>
 
 <script>
+    let actualUsers = [];
+    let actualGender = "all";
+
     // Fill the table with https://randomuser.me/api/?results=20 when clicking the `fetch-users` button
+    async function fetchUser() {
+        return await fetch("https://randomuser.me/api/?results=20", {
+            headers: {
+                accept: "application/json",
+            },
+            method: "GET"
+        }).then(res => res.json()).catch(error => {
+            console.error("Error fetching users:", error);
+        })
+    }
+
+    async function fillTable() {
+        const users = await fetchUser()
+        actualUsers = users.results
+        users.results.map((user) => {
+            document.querySelector("#tbl-body").innerHTML += `<tr>
+                <td><img src="${user.picture.thumbnail}" alt=""></td>
+                <td>${user.name.first} ${user.name.last}</td>
+                <td>${user.email}</td>
+                <td>${user.phone}</td>
+                <td>${user.dob.age}</td>
+                 <td>${user.gender === "male" ? "♂" : "♀"}</td>
+                </tr>
+                `
+
+        });
+    }
+
     // Add Age column
+    function addColumn(name, onClick) {
+        const newHeader = document.createElement("th");
+        newHeader.innerText = name;
+        if (onClick) {
+            newHeader.addEventListener('click', onClick);
+        }
+        document.querySelector("#tbl-users").children[0].children[0].appendChild(newHeader)
+    }
+
+    addColumn("Age")
     // Add gender column, with two different emojis
+    addColumn("Gender", () => {
+        if (actualGender === 'male') {
+            actualGender = "female"
+        } else if (actualGender === "all") {
+            actualGender = 'male'
+        } else if (actualGender === 'female') {
+            actualGender = "all"
+        }
+
+        document.querySelector("#tbl-body").innerHTML = actualUsers.filter((user) => {
+            if (actualGender === 'all') {
+                return true;
+            }
+            return user.gender === actualGender;
+
+        }).map((user) =>
+            `<tr>
+                <td><img src="${user.picture.thumbnail}" alt=""></td>
+                <td>${user.name.first} ${user.name.last}</td>
+                <td>${user.email}</td>
+                <td>${user.phone}</td>
+                <td>${user.dob.age}</td>
+                 <td>${user.gender === "male" ? "♂" : "♀"}</td>
+                </tr>
+                `
+        ).join('');
+
+    })
     // Filter user by gender
     // Sort user by age
     // Search user by name
