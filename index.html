@@ -29,11 +29,13 @@
 </main>
 
 <script>
+    let originalUsers = [];
     let actualUsers = [];
     let actualGender = "all";
+    let sortedByAge = "none";
 
     // Fill the table with https://randomuser.me/api/?results=20 when clicking the `fetch-users` button
-    async function fetchUser() {
+    const fetchUser = async () => {
         return await fetch("https://randomuser.me/api/?results=20", {
             headers: {
                 accept: "application/json",
@@ -44,11 +46,13 @@
         })
     }
 
-    async function fillTable() {
+    const fillTable = async () => {
         const users = await fetchUser()
-        actualUsers = users.results
-        users.results.map((user) => {
-            document.querySelector("#tbl-body").innerHTML += `<tr>
+        originalUsers = users.results
+        actualUsers = [...originalUsers];
+
+        document.querySelector("#tbl-body").innerHTML = users.results.map((user) =>
+            `<tr>
                 <td><img src="${user.picture.thumbnail}" alt=""></td>
                 <td>${user.name.first} ${user.name.last}</td>
                 <td>${user.email}</td>
@@ -57,38 +61,31 @@
                  <td>${user.gender === "male" ? "♂" : "♀"}</td>
                 </tr>
                 `
-
-        });
+        );
     }
 
-    // Add Age column
-    function addColumn(name, onClick) {
+    const addColumn = (name, onClick) => {
         const newHeader = document.createElement("th");
         newHeader.innerText = name;
+        newHeader.id = `header-${name.toLowerCase()}`;
         if (onClick) {
             newHeader.addEventListener('click', onClick);
         }
         document.querySelector("#tbl-users").children[0].children[0].appendChild(newHeader)
     }
 
-    addColumn("Age")
-    // Add gender column, with two different emojis
-    addColumn("Gender", () => {
-        if (actualGender === 'male') {
-            actualGender = "female"
-        } else if (actualGender === "all") {
-            actualGender = 'male'
-        } else if (actualGender === 'female') {
-            actualGender = "all"
+    // Add Age column
+    addColumn("Age", () => {
+        if (sortedByAge === 'none') {
+            sortedByAge = "asc"
+        } else if (sortedByAge === "asc") {
+            sortedByAge = 'dec'
+        } else if (sortedByAge === 'dec') {
+            sortedByAge = "none"
         }
 
-        document.querySelector("#tbl-body").innerHTML = actualUsers.filter((user) => {
-            if (actualGender === 'all') {
-                return true;
-            }
-            return user.gender === actualGender;
 
-        }).map((user) =>
+        document.querySelector("#tbl-body").innerHTML = actualUsers.sort((a, b) => sortedByAge === 'asc' ? a.dob.age - b.dob.age : sortedByAge === 'dec' ? b.dob.age - a.dob.age : 0).map((user) =>
             `<tr>
                 <td><img src="${user.picture.thumbnail}" alt=""></td>
                 <td>${user.name.first} ${user.name.last}</td>
@@ -99,9 +96,39 @@
                 </tr>
                 `
         ).join('');
-
     })
+
+    // Add gender column, with two different emojis
     // Filter user by gender
+    addColumn("Gender", () => {
+        actualUsers = [...originalUsers];
+        if (actualGender === 'male') {
+            actualGender = "female"
+        } else if (actualGender === "all") {
+            actualGender = 'male'
+        } else if (actualGender === 'female') {
+            actualGender = "all"
+        }
+        actualUsers = actualUsers.filter((user) => {
+            if (actualGender === 'all') {
+                return true;
+            }
+            return user.gender === actualGender;
+        })
+
+        document.querySelector("#tbl-body").innerHTML = actualUsers.sort((a, b) => sortedByAge === 'asc' ? a.dob.age - b.dob.age : sortedByAge === 'dec' ? b.dob.age - a.dob.age : 0).map((user) =>
+            `<tr>
+                <td><img src="${user.picture.thumbnail}" alt=""></td>
+                <td>${user.name.first} ${user.name.last}</td>
+                <td>${user.email}</td>
+                <td>${user.phone}</td>
+                <td>${user.dob.age}</td>
+                 <td>${user.gender === "male" ? "♂" : "♀"}</td>
+                </tr>
+                `
+        ).join('');
+    })
+
     // Sort user by age
     // Search user by name
     // Add users instead of replacing them.
