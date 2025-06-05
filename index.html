@@ -128,9 +128,25 @@
                 `
         ).join('');
     })
+    const searchUser = ()=> {
+        const value = document.querySelector("#search-user").value;
+        console.log("Searching for:", value);
+        document.querySelector("#tbl-body").innerHTML = actualUsers.filter((user) => user.name.first.toLowerCase().normalize("NFC").startsWith(value.toLowerCase()) || user.name.last.toLowerCase().normalize("NFC").startsWith(value.toLowerCase())).map(user => `<tr>
+                <td><img src="${user.picture.thumbnail}" alt=""></td>
+                <td>${user.name.first} ${user.name.last}</td>
+                <td>${user.email}</td>
+                <td>${user.phone}</td>
+                <td>${user.dob.age}</td>
+                 <td>${user.gender === "male" ? "♂" : "♀"}</td>
+                </tr>
+                `
+        ).join('')
+    };
+
 
     // Sort user by age
     // Search user by name
+    document.getElementById("fetch-users").parentElement.innerHTML += `<input id="search-user"  onchange="searchUser()">Search User</input>`
     // Add users instead of replacing them.
 </script>
 </body>
