@@ -34,6 +34,12 @@
     let actualGender = "all";
     let sortedByAge = "none";
 
+
+    const updateCounter = () => {
+        const displayed = document.querySelectorAll("#tbl-body tr").length;
+        const total = originalUsers.length;
+        document.querySelector("#counter").textContent = `${displayed} / ${total}`;
+    };
     // Fill the table with https://randomuser.me/api/?results=20 when clicking the `fetch-users` button
     const fetchUser = async () => {
         return await fetch("https://randomuser.me/api/?results=20", {
@@ -48,10 +54,15 @@
 
     const fillTable = async () => {
         const users = await fetchUser()
-        originalUsers = users.results
+        originalUsers = [...originalUsers, ...users.results]
         actualUsers = [...originalUsers];
 
-        document.querySelector("#tbl-body").innerHTML = users.results.map((user) =>
+        document.querySelector("#tbl-body").innerHTML = users.results.filter((user) => {
+            if (actualGender === 'all') {
+                return true;
+            }
+            return user.gender === actualGender;
+        }).sort((a, b) => sortedByAge === 'asc' ? a.dob.age - b.dob.age : sortedByAge === 'dec' ? b.dob.age - a.dob.age : 0).map((user) =>
             `<tr>
                 <td><img src="${user.picture.thumbnail}" alt=""></td>
                 <td>${user.name.first} ${user.name.last}</td>
@@ -61,7 +72,9 @@
                  <td>${user.gender === "male" ? "♂" : "♀"}</td>
                 </tr>
                 `
-        );
+        ).join('');
+        updateCounter();
+
     }
 
     const addColumn = (name, onClick) => {
@@ -96,6 +109,8 @@
                 </tr>
                 `
         ).join('');
+        updateCounter();
+
     })
 
     // Add gender column, with two different emojis
@@ -127,6 +142,8 @@
                 </tr>
                 `
         ).join('');
+        updateCounter();
+
     })
     const searchUser = ()=> {
         const value = document.querySelector("#search-user").value;
@@ -141,12 +158,15 @@
                 </tr>
                 `
         ).join('')
+        updateCounter();
     };
 
 
     // Sort user by age
     // Search user by name
     document.getElementById("fetch-users").parentElement.innerHTML += `<input id="search-user"  onchange="searchUser()">Search User</input>`
+    document.getElementById("fetch-users").parentElement.innerHTML += `<div id='counter'>0 / 0</div>`
+
     // Add users instead of replacing them.
 </script>
 </body>

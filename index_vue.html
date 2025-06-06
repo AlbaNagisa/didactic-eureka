@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Vanilla JS Example</title>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1" name="viewport">
+    <meta content="light dark" name="color-scheme">
+    <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.fluid.classless.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+
+<body>
+<main id="app">
+    <div>
+        <h1>Vanilla JS Example (Vue)</h1>
+        <hr>
+        <button @click="fetchUsers">Fetch Users</button>
+        <button @click="clearUsers">Clear Users</button>
+        <label>
+            <input v-model="search" placeholder="Search User" style="margin-left:1em;">
+        </label>
+        <div>{{ displayedUsers.length }} / {{ users.length }}</div>
+    </div>
+    <table id="tbl-users">
+        <thead>
+        <tr>
+            <th>Photo</th>
+            <th>Nom</th>
+            <th>Email</th>
+            <th>Tel</th>
+            <th @click="toggleAgeSort" style="cursor:pointer">Age</th>
+            <th @click="toggleGender" style="cursor:pointer">Gender</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="user in displayedUsers" :key="user.login.uuid">
+            <td><img :src="user.picture.thumbnail" alt=""></td>
+            <td>{{ user.name.first }} {{ user.name.last }}</td>
+            <td>{{ user.email }}</td>
+            <td>{{ user.phone }}</td>
+            <td>{{ user.dob.age }}</td>
+            <td>{{ user.gender === 'male' ? '♂' : '♀' }}</td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+<script>
+    const { createApp, ref, computed, watch } = Vue;
+
+    createApp({
+
+        setup() {
+            const users = ref(JSON.parse(window.localStorage.getItem('users'))??[]);
+            const genderFilter = ref(window.localStorage.getItem('gender')??'all');
+            const ageSort = ref(window.localStorage.getItem('ageSort')??'none');
+            const search = ref('');
+
+            watch([genderFilter, ageSort, users], ([newGenderFilter, newAgeSort, newUsers]) => {
+                window.localStorage.setItem('gender', newGenderFilter);
+                window.localStorage.setItem('ageSort', newAgeSort);
+                window.localStorage.setItem('users', JSON.stringify(newUsers));
+            })
+
+            const fetchUsers = async () => {
+                const res = await fetch('https://randomuser.me/api/?results=20');
+                const data = await res.json();
+                users.value = users.value.concat(data.results);
+            };
+
+            const displayedUsers = computed(() => {
+                let filtered = users.value;
+                if (genderFilter.value !== 'all') {
+                    filtered = filtered.filter(u => u.gender === genderFilter.value);
+                }
+                if (search.value.trim()) {
+                    const s = search.value.trim().toLowerCase();
+                    filtered = filtered.filter(u =>
+                        u.name.first.toLowerCase().startsWith(s) ||
+                        u.name.last.toLowerCase().startsWith(s)
+                    );
+                }
+                if (ageSort.value === 'asc') {
+                    filtered = filtered.slice().sort((a, b) => a.dob.age - b.dob.age);
+                } else if (ageSort.value === 'dec') {
+                    filtered = filtered.slice().sort((a, b) => b.dob.age - a.dob.age);
+                }
+                return filtered;
+            });
+
+            const clearUsers = () => {
+                users.value = [];
+                genderFilter.value = 'all';
+                ageSort.value = 'none';
+                search.value = '';
+
+            };
+
+            const toggleGender = () => {
+                const nextStep = {
+                    'all' : 'male',
+                    'male': 'female',
+                    'female': 'all',
+                }
+
+                genderFilter.value = nextStep[genderFilter.value];
+            };
+
+            const toggleAgeSort = () => {
+                const nextStep = {
+                    'none' : 'asc',
+                    'asc': 'dsc',
+                    'dec': 'none',
+                }
+                ageSort.value = nextStep[ageSort.value];
+            };
+
+            return {
+                users,
+                fetchUsers,
+                clearUsers,
+                displayedUsers,
+                genderFilter,
+                ageSort,
+                search,
+                toggleGender,
+                toggleAgeSort
+            };
+        }
+    }).mount("#app");
+</script>
+</body>
+</html>
