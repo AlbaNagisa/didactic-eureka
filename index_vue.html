@@ -7,6 +7,12 @@
     <meta content="light dark" name="color-scheme">
     <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.fluid.classless.min.css" rel="stylesheet">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        .red{
+            color: red;
+        }
+        .bg-blue {background-color: blue}
+    </style>
 </head>
 
 <body>
@@ -17,11 +23,12 @@
         <button @click="fetchUsers">Fetch Users</button>
         <button @click="clearUsers">Clear Users</button>
         <label>
+            text
             <input v-model="search" placeholder="Search User" style="margin-left:1em;">
         </label>
-        <div>{{ displayedUsers.length }} / {{ users.length }}</div>
+        <div :class="[{red: displayedUsers.length>30}]" class="bg-blue">{{ displayedUsers.length }} / {{ users.length }}</div>
     </div>
-    <table id="tbl-users">
+    <table>
         <thead>
         <tr>
             <th>Photo</th>
@@ -45,7 +52,7 @@
     </table>
 </main>
 <script>
-    const { createApp, ref, computed, watch } = Vue;
+    const { createApp, ref, computed, watch, watchEffect } = Vue;
 
     createApp({
 
@@ -60,6 +67,10 @@
                 window.localStorage.setItem('ageSort', newAgeSort);
                 window.localStorage.setItem('users', JSON.stringify(newUsers));
             })
+
+            watchEffect(() => {
+                document.title = `Users: ${users.value.length}`;
+            });
 
             const fetchUsers = async () => {
                 const res = await fetch('https://randomuser.me/api/?results=20');
@@ -96,22 +107,22 @@
             };
 
             const toggleGender = () => {
-                const nextStep = {
+                const nextSteps = {
                     'all' : 'male',
                     'male': 'female',
                     'female': 'all',
                 }
 
-                genderFilter.value = nextStep[genderFilter.value];
+                genderFilter.value = nextSteps[genderFilter.value];
             };
 
             const toggleAgeSort = () => {
-                const nextStep = {
+                const nextSteps = {
                     'none' : 'asc',
                     'asc': 'dec',
                     'dec': 'none',
                 }
-                ageSort.value = nextStep[ageSort.value];
+                ageSort.value = nextSteps[ageSort.value];
             };
 
             return {
@@ -119,8 +130,6 @@
                 fetchUsers,
                 clearUsers,
                 displayedUsers,
-                genderFilter,
-                ageSort,
                 search,
                 toggleGender,
                 toggleAgeSort
